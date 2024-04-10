@@ -17,3 +17,28 @@ def generate_t(
         npt.NDArray[np.float32]: Equally spaced t indices
     """
     return np.linspace(0, T, num=n_steps)
+
+
+def a_order_power_mean(x: npt.NDArray[np.float32], a: int = 0) -> np.float32:
+    """This function returns the a-order power mean over the vector x for a given a in relatives number.
+
+    Args:
+    ----
+        x (npt.NDArray[np.float32]): The vector to compute the a-order power mean on.
+        a (int, optional): The a-order power. Defaults to 0.
+
+    Returns:
+    ----
+        np.float32: The power mean.
+    """
+    d = int(x.shape[0])
+    if a == 0:
+        return np.prod(x) ** (1 / d)
+    elif a == np.inf:
+        return np.max(x)
+    elif a == -np.inf:
+        return np.min(x)
+    else:
+        return (
+            (1 / d) * np.sum(np.apply_along_axis(lambda x_i: x_i**a, axis=0, arr=x))
+        ) ** (1 / a)

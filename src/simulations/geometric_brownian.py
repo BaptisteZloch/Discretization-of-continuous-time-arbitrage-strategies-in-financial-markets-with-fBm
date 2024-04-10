@@ -47,7 +47,7 @@ def generate_n_assets_portfolio(
     s0: Union[float, int] = 100,
     add_risk_free_asset: bool = True,
     as_dataframe: bool = True,
-) -> Union[pd.DataFrame, npt.NDArray]:
+) -> Union[pd.DataFrame, npt.NDArray[np.float32]]:
     """_summary_
 
     Args:
@@ -63,7 +63,7 @@ def generate_n_assets_portfolio(
 
     Returns:
     ----
-        Union[pd.DataFrame, npt.NDArray]: _description_
+        Union[pd.DataFrame, npt.NDArray[np.float32]]: _description_
     """
     portfolio_paths = np.array(
         [
@@ -82,7 +82,7 @@ def generate_n_assets_portfolio(
             portfolio_paths,
             index=generate_t(n_steps=n_steps, T=T),
             columns=[
-                f"S_t_{i if add_risk_free_asset else i+1}"
+                f"S_{i if add_risk_free_asset else i+1}_t"
                 for i in range(n_assets + 1 if add_risk_free_asset else n_assets)
             ],
         )

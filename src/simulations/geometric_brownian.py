@@ -47,8 +47,8 @@ def generate_n_assets_portfolio(
     s0: Union[float, int] = 100,
     add_risk_free_asset: bool = True,
     as_dataframe: bool = True,
-) -> Union[pd.DataFrame, npt.NDArray[np.float32]]:
-    """_summary_
+) -> Union[pd.DataFrame, npt.NDArray[np.float64]]:
+    """Generate a portfolio of n assets each asset is independant and follows a geometrics brownian motion.
 
     Args:
     ----
@@ -58,12 +58,12 @@ def generate_n_assets_portfolio(
         mu (Union[float, int], optional): The drift term. Defaults to 0.07.
         sigma (Union[float, int], optional): The sigma term. Defaults to 0.2.
         s0 (Union[float, int], optional): The initial price à time 0. Defaults to 100.
-        add_risk_free_asset (bool, optional): _description_. Defaults to True.
-        as_dataframe (bool, optional): _description_. Defaults to True.
+        add_risk_free_asset (bool, optional): Whether to add the risk free asset =1 as the first column of the dataframe. Defaults to True.
+        as_dataframe (bool, optional): The assets price processes in Pandas DataFrame or Numpy array. Defaults to True.
 
     Returns:
     ----
-        Union[pd.DataFrame, npt.NDArray[np.float32]]: _description_
+        Union[pd.DataFrame, npt.NDArray[np.float64]]:  The assets price processes in Pandas DataFrame or Numpy array
     """
     portfolio_paths = np.array(
         [

@@ -6,7 +6,7 @@ from typing import Union
 def generate_t(
     n_steps: int = 100,
     T: Union[float, int] = 1,
-) -> npt.NDArray[np.float32]:
+) -> npt.NDArray[np.float64]:
     """Given a length in years T and a number of steps (n_steps) generate equally spaced t indices.
 
     Args:
@@ -14,22 +14,22 @@ def generate_t(
         T (Union[float, int], optional): Horizon in years.. Defaults to 1.
 
     Returns:
-        npt.NDArray[np.float32]: Equally spaced t indices
+        npt.NDArray[np.float64]: Equally spaced t indices
     """
     return np.linspace(0, T, num=n_steps)
 
 
-def a_order_power_mean(x: npt.NDArray[np.float32], a: int = 0) -> np.float32:
+def a_order_power_mean(x: npt.NDArray[np.float64], a: int = 0) -> np.float64:
     """This function returns the a-order power mean over the vector x for a given a in relatives number.
 
     Args:
     ----
-        x (npt.NDArray[np.float32]): The vector to compute the a-order power mean on.
+        x (npt.NDArray[np.float64]): The vector to compute the a-order power mean on.
         a (int, optional): The a-order power. Defaults to 0.
 
     Returns:
     ----
-        np.float32: The power mean.
+        np.float64: The power mean.
     """
     d = int(x.shape[0])
     if a == 0:

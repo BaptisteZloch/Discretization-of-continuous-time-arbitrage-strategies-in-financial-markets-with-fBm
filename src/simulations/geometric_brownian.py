@@ -11,8 +11,8 @@ from utility.utils import generate_t
 def generate_brownian_path(
     n_steps: int = 100,
     T: Union[float, int] = 1,
-    mu: Union[float, int] = 0.07,
-    sigma: Union[float, int] = 0.2,
+    mu: float = 0.07,
+    sigma: float = 0.2,
     s0: Union[float, int] = 100,
 ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
     """Generate a geometric brownian motion path
@@ -21,8 +21,8 @@ def generate_brownian_path(
     ----
         n_steps (int, optional): Number of step of the simulation. Defaults to 100.
         T (Union[float, int], optional): Number of years. Defaults to 1.
-        mu (Union[float, int], optional): The drift term. Defaults to 0.07.
-        sigma (Union[float, int], optional): The sigma term. Defaults to 0.2.
+        mu (float, optional): The drift term. Defaults to 0.07.
+        sigma (float, optional): The sigma term. Defaults to 0.2.
         s0 (Union[float, int], optional): The initial price à time 0. Defaults to 100.
 
     Returns:
@@ -42,8 +42,8 @@ def generate_n_assets_portfolio(
     n_assets: int,
     n_steps: int = 100,
     T: Union[float, int] = 1,
-    mu: Union[float, int] = 0.07,
-    sigma: Union[float, int] = 0.2,
+    mu: float = 0.07,
+    sigma: float = 0.2,
     s0: Union[float, int] = 100,
     add_risk_free_asset: bool = True,
     as_dataframe: bool = True,
@@ -55,8 +55,8 @@ def generate_n_assets_portfolio(
         n_assets (int): The number of assets in the portfolio.
         n_steps (int, optional): Number of step of the simulation. Defaults to 100.
         T (Union[float, int], optional): Number of years. Defaults to 1.
-        mu (Union[float, int], optional): The drift term. Defaults to 0.07.
-        sigma (Union[float, int], optional): The sigma term. Defaults to 0.2.
+        mu (float, optional): The drift term. Defaults to 0.07.
+        sigma (float, optional): The sigma term. Defaults to 0.2.
         s0 (Union[float, int], optional): The initial price à time 0. Defaults to 100.
         add_risk_free_asset (bool, optional): Whether to add the risk free asset =1 as the first column of the dataframe. Defaults to True.
         as_dataframe (bool, optional): The assets price processes in Pandas DataFrame or Numpy array. Defaults to True.

@@ -20,12 +20,12 @@ def generate_n_assets_portfolio(
     n_steps: int = 100,
     T: Union[float, int] = 1,
     H: float = 0.7,
-    mu: Union[float, int] = 0.07,
-    sigma: Union[float, int] = 0.2,
+    mu: float = 0.07,
+    sigma: float = 0.2,
     s0: Union[float, int] = 100,
     add_risk_free_asset: bool = True,
     as_dataframe: bool = True,
-    path_type: Literal["geometric", "fractional"] = "fractional",
+    brownian_type: Literal["standard", "fractional"] = "fractional",
 ) -> Union[pd.DataFrame, npt.NDArray[np.float64]]:
     """Generate a portfolio of n assets each asset is independant and follows a geometrics brownian motion.
 
@@ -35,12 +35,12 @@ def generate_n_assets_portfolio(
         n_steps (int, optional): Number of step of the simulation. Defaults to 100.
         T (Union[float, int], optional): Number of years. Defaults to 1.
         H (float, optional): The hurst exponent between 0 and 1. Defaults to 0.7.
-        mu (Union[float, int], optional): The drift term. Defaults to 0.07.
-        sigma (Union[float, int], optional): The sigma term. Defaults to 0.2.
+        mu (float, optional): The drift term. Defaults to 0.07.
+        sigma (float, optional): The sigma term. Defaults to 0.2.
         s0 (Union[float, int], optional): The initial price à time 0. Defaults to 100.
         add_risk_free_asset (bool, optional): Whether to add the risk free asset =1 as the first column of the dataframe. Defaults to True.
         as_dataframe (bool, optional): The assets price processes in Pandas DataFrame or Numpy array. Defaults to True.
-        path_type (Literal[&quot;geometric&quot;, &quot;fractional&quot;], optional): _description_. Defaults to "fractional".
+        brownian_type (Literal[&quot;standard&quot;, &quot;fractional&quot;], optional): _description_. Defaults to "fractional".
 
     Returns:
     ----
@@ -55,7 +55,7 @@ def generate_n_assets_portfolio(
                 mu=mu,
                 sigma=sigma,
                 s0=s0,
-                path_type=path_type,
+                brownian_type=brownian_type,
             )[-1]
             for _ in tqdm(
                 range(n_assets), desc="generate all paths of the portfolio", leave=False
@@ -82,10 +82,10 @@ def generate_brownian_path(
     n_steps: int = 100,
     T: Union[float, int] = 1,
     H: float = 0.7,
-    mu: Union[float, int] = 0.07,
-    sigma: Union[float, int] = 0.2,
+    mu: float = 0.07,
+    sigma: float = 0.2,
     s0: Union[float, int] = 100,
-    path_type: Literal["geometric", "fractional"] = "fractional",
+    brownian_type: Literal["standard", "fractional"] = "fractional",
 ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
     """Generate a geometric brownian motion path
 
@@ -94,10 +94,10 @@ def generate_brownian_path(
         n_steps (int, optional): Number of step of the simulation. Defaults to 100.
         H (float, optional): The hurst exponent between 0 and 1. Defaults to 0.7.
         T (Union[float, int], optional): Number of years. Defaults to 1.
-        mu (Union[float, int], optional): The drift term. Defaults to 0.07.
-        sigma (Union[float, int], optional): The sigma term. Defaults to 0.2.
+        mu (float, optional): The drift term. Defaults to 0.07.
+        sigma (float, optional): The sigma term. Defaults to 0.2.
         s0 (Union[float, int], optional): The initial price à time 0. Defaults to 100.
-        path_type (Literal[&quot;geometric&quot;, &quot;fractional&quot;], optional): _description_. Defaults to "fractional".
+        brownian_type (Literal[&quot;standard&quot;, &quot;fractional&quot;], optional): _description_. Defaults to "fractional".
 
     Returns:
     ----
@@ -105,7 +105,7 @@ def generate_brownian_path(
     """
     dt = T / n_steps
     t = np.linspace(0, T, num=n_steps)
-    if path_type == "geometric":
+    if brownian_type == "standard":
         db_t = np.random.normal(0, np.sqrt(dt), size=(n_steps))
         db_t[0] = 0  # B_0 = 0
         B_t = np.cumsum(db_t)  # Construct B_t
@@ -137,6 +137,7 @@ def fBM_simul(T: float, N: int, H: float) -> npt.NDArray[np.float32]:
         shift = 0
 
     dt = T / N
+
     W_increment = [
         compute_Wk(k, N, H)
         for k in tqdm(
@@ -145,7 +146,9 @@ def fBM_simul(T: float, N: int, H: float) -> npt.NDArray[np.float32]:
     ]
 
     W = dt**H * np.cumsum(W_increment)
-    return np.array(W[: len(W) - shift])
+    W = np.array(W[: len(W) - shift])
+    W[0] = 0
+    return W
 
 
 def compute_Wk(k: int, N: int, H: float) -> float:
@@ -160,17 +163,17 @@ def compute_Wk(k: int, N: int, H: float) -> float:
         float: The increment
     """
     phi = np.random.uniform(low=0, high=2 * pi, size=N)
-
-    W_j = [
-        compute_Sf(j / N, N, H) ** 0.5
-        * (
-            np.cos(2 * pi * j * k / N) * np.cos(phi[int(j + 0.5 * N)])
-            - np.sin(2 * pi * j * k / N) * np.sin(phi[int(j + 0.5 * N)])
+    return sum(
+        map(
+            lambda j: np.sqrt(2 / N)
+            * (compute_Sf(j / N, N, H) ** 0.5)
+            * (
+                np.cos(2 * pi * j * k / N) * np.cos(phi[int(j + 0.5 * N)])
+                - np.sin(2 * pi * j * k / N) * np.sin(phi[int(j + 0.5 * N)])
+            ),
+            range(int(-0.5 * N), int(0.5 * N)),
         )
-        for j in range(int(-0.5 * N), int(0.5 * N))  # from -N/2 to N/2 -1
-    ]
-
-    return np.sqrt(2 / N) * sum(W_j)  # Wk
+    )  # Wk
 
 
 def compute_Sf(f: float, N: int, H: float) -> float:
@@ -184,12 +187,16 @@ def compute_Sf(f: float, N: int, H: float) -> float:
     Returns:
         float: _description_
     """
-    S_m = [
-        (abs(m + 1) ** (2 * H) + abs(m - 1) ** (2 * H) - 2 * abs(m) ** (2 * H))
-        * np.cos(2 * pi * m * f)
-        for m in range(int(-0.5 * N), int(0.5 * N))  # from -N/2 to N/2 -1
-    ]
-    return 0.5 * sum(S_m)  # Sf
+
+    return 0.5 * sum(
+        map(
+            lambda m: (
+                abs(m + 1) ** (2 * H) + abs(m - 1) ** (2 * H) - 2 * abs(m) ** (2 * H)
+            )
+            * np.cos(2 * pi * m * f),
+            range(int(-0.5 * N), int(0.5 * N)),
+        )
+    )  # Sf
 
 
 ### Rendering

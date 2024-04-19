@@ -2,6 +2,18 @@ import numpy.typing as npt
 import numpy as np
 from typing import Union
 
+def transaction_cost_L(volume_t: float, p_1: float, p_2: float) -> float:
+    """Equation 2.17 : define the transaction costs
+
+    Args:
+        volume_t (float): Trading volume
+        p_1 (float): proportionality factor p1 (in percent)
+        p_2 (float): minimum fee p2 (in monetary units)
+
+    Returns:
+        float: The charged cost for the volume at t
+    """
+    return max(volume_t * p_1, p_2) * (volume_t > 0)
 
 def generate_t(
     n_steps: int = 100,

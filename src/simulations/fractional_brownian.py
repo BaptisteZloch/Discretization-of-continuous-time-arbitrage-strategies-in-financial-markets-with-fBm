@@ -86,6 +86,7 @@ def generate_brownian_path(
     sigma: float = 0.2,
     s0: Union[float, int] = 100,
     brownian_type: Literal["standard", "fractional"] = "fractional",
+    fbm_simulation_method: Literal["cholesky", "spectral_density"] = "cholesky",
 ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
     """Generate a geometric brownian motion path
 
@@ -110,12 +111,35 @@ def generate_brownian_path(
         db_t[0] = 0  # B_0 = 0
         B_t = np.cumsum(db_t)  # Construct B_t
     else:
-        B_t = fBM_simul(T=T, N=n_steps, H=H)
+        B_t = fBM_simul(
+            T=T, N=n_steps, H=H, fbm_simulation_method=fbm_simulation_method
+        )
     S_t = s0 * np.exp(mu * t + sigma * B_t)  # Geometric transformation
     return t, S_t
 
 
-def fBM_simul(T: float, N: int, H: float) -> npt.NDArray[np.float32]:
+def fbm_covariance_function(s: int, t: int, H: float) -> float:
+    """Covariance function for the fractional brownian motion
+
+    Args:
+        s (int): The increment i-1
+        t (int): The increment i
+        H (float): The Hurst exponent
+
+    Returns:
+        float: The covariance between B_s and B_t.
+    """
+    return 0.5 * (
+        np.power(s, 2.0 * H) + np.power(t, 2.0 * H) - np.power(np.abs(t - s), 2.0 * H)
+    )
+
+
+def fBM_simul(
+    T: float,
+    N: int,
+    H: float,
+    fbm_simulation_method: Literal["cholesky", "spectral_density"] = "cholesky",
+) -> npt.NDArray[np.float32]:
     """Spectral simulation of fBM (Appendix B)
 
     Args:
@@ -126,29 +150,46 @@ def fBM_simul(T: float, N: int, H: float) -> npt.NDArray[np.float32]:
     Returns:
         npt.NDArray[np.float32]: _description_
     """
+    if fbm_simulation_method == "spectral_density":
+        if (
+            N % 2 != 0
+        ):  # if N is not pair we adjust it to ensure 0.5*N is include in integer and that delta stay the same
+            T = (T / N) * (N + 1)
+            N = N + 1
+            shift = 1
+        else:
+            shift = 0
 
-    if (
-        N % 2 != 0
-    ):  # if N is not pair we adjust it to ensure 0.5*N is include in integer and that delta stay the same
-        T = (T / N) * (N + 1)
-        N = N + 1
-        shift = 1
-    else:
-        shift = 0
+        dt = T / N
 
-    dt = T / N
+        W_increment = [
+            compute_Wk(k, N, H)
+            for k in tqdm(
+                range(0, N), desc="Computing fBm increments...", leave=False, total=N
+            )
+        ]
 
-    W_increment = [
-        compute_Wk(k, N, H)
-        for k in tqdm(
-            range(0, N), desc="Computing fBm increments...", leave=False, total=N
+        W = dt**H * np.cumsum(W_increment)
+        W = np.array(W[: len(W) - shift])
+        W[0] = 0
+        return W
+    elif fbm_simulation_method == "cholesky":
+        time_grid = np.linspace(0.0, T, N)[1:]
+        fractional_covariance_matrix = np.matrix(
+            [
+                [
+                    fbm_covariance_function(time_grid[i], time_grid[j], H)
+                    for j in np.arange(N - 1)
+                ]
+                for i in np.arange(N - 1)
+            ]
         )
-    ]
+        gaussian = np.matrix(np.random.normal(0.0, 1.0, N - 1))
+        W = np.linalg.cholesky(fractional_covariance_matrix) * gaussian.T
+        return np.insert(W.A1,0,0)
+    else:
+        raise ValueError("Error provide a valid method for generating the fBm.")
 
-    W = dt**H * np.cumsum(W_increment)
-    W = np.array(W[: len(W) - shift])
-    W[0] = 0
-    return W
 
 
 def compute_Wk(k: int, N: int, H: float) -> float:

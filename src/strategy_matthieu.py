@@ -4,13 +4,29 @@ from typing import Union
 from tqdm import tqdm
 import pandas as pd
 import matplotlib.pyplot as plt
-from simulations.fractional_brownian import generate_brownian_path, generate_n_assets_portfolio
+from simulations.fractional_brownian import (
+    generate_brownian_path,
+    generate_n_assets_portfolio,
+)
 from utility.utils import generate_t, a_order_power_mean, transaction_cost_L
 
 
-t, s_t = generate_brownian_path(n_steps=250, T=1, H=0.8, mu=0.15, sigma=0.2, s0=100, brownian_type="fractional")
+t, s_t = generate_brownian_path(
+    n_steps=250, T=1, H=0.8, mu=0.15, sigma=0.2, s0=100, brownian_type="fractional"
+)
 
-df_ptf = generate_n_assets_portfolio(n_assets=2, n_steps=250, T=1, H=0.7, mu=0.05, sigma=0.1, s0=100, add_risk_free_asset=False, as_dataframe=True, brownian_type="fractional")
+df_ptf = generate_n_assets_portfolio(
+    n_assets=2,
+    n_steps=250,
+    T=1,
+    H=0.7,
+    mu=0.05,
+    sigma=0.1,
+    s0=100,
+    add_risk_free_asset=False,
+    as_dataframe=True,
+    brownian_type="fractional",
+)
 
 
 def phi_i(a: int, s_i_t: float, s_t: npt.NDArray[np.float64]) -> np.float64:
@@ -51,7 +67,7 @@ V_t_psi = []  # Using equation 2.14/2.22
 V_t_phi = []  # Using equation 2.21
 
 for index, row in tqdm(df_ptf.iterrows(), desc="Running the strategy...", leave=False):
-###################### Compute the new quantity (Equation 2.10) ###############################
+    ###################### Compute the new quantity (Equation 2.10) ###############################
     new_quantity = [
         SCALING_FACTOR
         * float(
@@ -65,12 +81,21 @@ for index, row in tqdm(df_ptf.iterrows(), desc="Running the strategy...", leave=
 N = len(quantities) - 1
 for n, quant in enumerate(quantities):
     ###################### Volume section (Equation 2.26) ###############################
-    if n == 0: # Repurchasing
-        volumes.append(np.array(tuple(map(abs, quantities[0]))) @ df_ptf.iloc[0].to_numpy())
+    if n == 0:  # Repurchasing
+        volumes.append(
+            np.array(tuple(map(abs, quantities[0]))) @ df_ptf.iloc[0].to_numpy()
+        )
     elif n == N:  # liquidating
-        volumes.append(np.array(tuple(map(abs, quantities[N]))) @ df_ptf.iloc[N].to_numpy())
+        volumes.append(
+            np.array(tuple(map(abs, quantities[N]))) @ df_ptf.iloc[N].to_numpy()
+        )
     else:
-        volumes.append(np.array(tuple(map(abs, np.array(quantities[n]) - np.array(quantities[n-1])))) @ df_ptf.iloc[n-1].to_numpy())
+        volumes.append(
+            np.array(
+                tuple(map(abs, np.array(quantities[n]) - np.array(quantities[n - 1])))
+            )
+            @ df_ptf.iloc[n - 1].to_numpy()
+        )
 
     ###################### Transaction cost section ###############################
     # Equation 2.17 : L_t^\Phi
@@ -79,7 +104,10 @@ for n, quant in enumerate(quantities):
     ###################### Transaction account section ###############################
     # Equation 2.19 : D_t^\Phi
     if n != 0 or n != N:  # Because 1.19 n between 1 and N-1
-        transaction_account.append((np.array(quantities[n]) - np.array(quantities[n-1])) @ df_ptf.iloc[n-1].to_numpy())
+        transaction_account.append(
+            (np.array(quantities[n]) - np.array(quantities[n - 1]))
+            @ df_ptf.iloc[n - 1].to_numpy()
+        )
     else:
         transaction_account.append(0)
 
@@ -88,15 +116,26 @@ for n, quant in enumerate(quantities):
     if n == 0:
         transaction_account_qty.append(-transaction_costs[0])
     elif n == N:
-        net_revenue = (np.array(quantities[N]) @ df_ptf.iloc[N].to_numpy()) - transaction_costs[N]  # Equation 2.18 : R^\Gamma
+        net_revenue = (
+            np.array(quantities[N]) @ df_ptf.iloc[N].to_numpy()
+        ) - transaction_costs[
+            N
+        ]  # Equation 2.18 : R^\Gamma
         transaction_account_qty.append(transaction_account_qty[-1] + net_revenue)
     else:
-        transaction_account_qty.append(transaction_account_qty[n-1] - transaction_account[n-1] - transaction_costs[n-1])
+        transaction_account_qty.append(
+            transaction_account_qty[n - 1]
+            - transaction_account[n - 1]
+            - transaction_costs[n - 1]
+        )
 
     ###################### Portfolio value ###############################
     # Using equation 2.21
     if n != N:
-        V_t_phi.append(np.array(quantities[n]) @ df_ptf.iloc[n].to_numpy() + transaction_account_qty[n]) # Discrete # +1*transaction_account_qty[-1]
+        V_t_phi.append(
+            np.array(quantities[n]) @ df_ptf.iloc[n].to_numpy()
+            + transaction_account_qty[n]
+        )  # Discrete # +1*transaction_account_qty[-1]
     else:
         V_t_phi.append(transaction_account_qty[n])
     # Using equation 2.22
@@ -107,7 +146,7 @@ weights_df = pd.DataFrame(
     index=df_ptf.index,
     columns=[f"phi_{i}" for i in range(1, len(quantities[0]) + 1)],
 )
-plt.plot(transaction_account_qty) #\Phi_t^{d+1}
+plt.plot(transaction_account_qty)  # \Phi_t^{d+1}
 
 _, ax = plt.subplots(3, 1, figsize=(20, 20))
 for col in df_ptf.columns:
@@ -139,7 +178,7 @@ ax_l.fill_between(
 ax[1].set_xlabel("$t$ (in year)", fontsize=15)
 ax[1].set_ylabel(r"Quantity of assets $\Phi_t^i$", fontsize=15)
 ax_l.set_ylabel(r"Transaction account $-D_t^\Phi$", fontsize=15)
-ax_l.set_ylim([-10,10])
+ax_l.set_ylim([-10, 10])
 ax[1].set_title(f"Strategies and rebalancing costs", fontsize=20)
 ax[1].grid()
 ax[1].legend(fontsize=10, loc="upper left")

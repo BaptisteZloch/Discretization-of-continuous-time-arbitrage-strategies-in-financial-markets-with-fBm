@@ -1,4 +1,4 @@
-from typing import Any, Callable, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 import pandas as pd
 import numpy as np
 import numpy.typing as npt
@@ -44,12 +44,11 @@ class Backtester:
     def run_backtest(
         self,
         allocation_function: Callable[
-            [float, npt.NDArray[np.float64], List[str]],
-            float,
+            [Dict[str, float]],
+            List[float],
         ],
         p1: float = 0.1,
         p2: float = 0.5,
-        scaling_factor: int = 100,
         universe_dataframe: Optional[pd.DataFrame] = None,
     ) -> Tuple[
         pd.DataFrame,
@@ -63,7 +62,6 @@ class Backtester:
             allocation_function (Callable[ [float,  npt.NDArray[np.float64],List[str]], float, ]): _description_
             p1 (float, optional): Proportionality factor p1 (in percent). Defaults to 0.1.
             p2 (float, optional): Minimum fee p2 (in monetary units). Defaults to 0.5.
-            scaling_factor (int, optional): The scaling factor for the stock quantity \\gamma. Defaults to 100.
             universe_dataframe (Optional[pd.DataFrame], optional): _description_. Defaults to None.
         """
         self.__universe_dataframe = self.__handle_empty_dataframe(
@@ -84,12 +82,7 @@ class Backtester:
             desc="Running the strategy...",
             leave=False,
         ):  ###################### Compute the new quantity (Equation 2.10) ###############################
-            new_quantity = [
-                scaling_factor
-                * allocation_function(asset_i, row.to_numpy(), row.index.to_list())
-                for asset_i in row
-            ]
-            quantities.append(new_quantity)
+            quantities.append(allocation_function(row.to_dict()))
             ###################### Volume section (Equation 2.26) ###############################
             if (
                 index == self.__universe_dataframe.index[0]

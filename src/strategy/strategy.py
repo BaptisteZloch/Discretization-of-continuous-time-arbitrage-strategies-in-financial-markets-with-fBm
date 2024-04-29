@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
-from functools import reduce
-from typing import List
+from typing import Dict, List
 import numpy as np
 import numpy.typing as npt
 
@@ -8,34 +7,42 @@ from utility.utils import a_order_power_mean
 
 
 class Strategy(ABC):
+    def __init__(self, scaling_factor: int = 100) -> None:
+        self._scaling_factor = scaling_factor
+
     @abstractmethod
     def get_allocation(self):
         pass
 
 
 class SalopekStrategy(Strategy):
-    def __init__(self, alpha: int, beta: int) -> None:
+    def __init__(self, alpha: int, beta: int, scaling_factor: int = 100) -> None:
+        super().__init__(scaling_factor=scaling_factor)
         self.__alpha = alpha
         self.__beta = beta
 
-    def get_allocation(
-        self, asset_i: float, s_t: npt.NDArray[np.float64], *args, **kwargs
-    ) -> float:
-        """Return allocation for the asset i given price of all asset à time t.
+    def get_allocation(self, s_t: Dict[str, float], *args, **kwargs) -> List[float]:
+        """Returns the asset allocation for the next iteration
 
         Args:
-        ----
-            asset_i (float): The current price of the asset i
-            s_t (npt.NDArray[np.float64]): The universe prices.
+            s_t (Dict[str, float]): The dict of the current assets and prices
 
         Returns:
-        ----
-            float: The allocation for asset i.
+            List[float]: The new quantity to hold for the next iteration
         """
-        return float(
-            SalopekStrategy.__phi_i(a=self.__beta, s_i_t=asset_i, s_t=s_t)
-            - SalopekStrategy.__phi_i(a=self.__alpha, s_i_t=asset_i, s_t=s_t)
-        )
+        prices = list(s_t.values())
+        return [
+            self._scaling_factor
+            * float(
+                SalopekStrategy.__phi_i(
+                    a=self.__beta, s_i_t=price, s_t=np.array(prices)
+                )
+                - SalopekStrategy.__phi_i(
+                    a=self.__alpha, s_i_t=price, s_t=np.array(prices)
+                )
+            )
+            for price in prices
+        ]
 
     @staticmethod
     def __phi_i(a: int, s_i_t: float, s_t: npt.NDArray[np.float64]) -> np.float64:
@@ -56,18 +63,30 @@ class SalopekStrategy(Strategy):
 
 
 class ShiryaevStrategy(Strategy):
-    def __init__(self) -> None:
-        pass
+    def __init__(self, risk_free_asset_name: str, scaling_factor: int = 100) -> None:
+        super().__init__(scaling_factor=scaling_factor)
+        self.__risk_free_asset_name = risk_free_asset_name
 
-    def get_allocation(
-        self,
-        asset_i: float,
-        s_t: npt.NDArray[np.float64],
-        is_risk_free_asset: bool = False,
-        *args,
-        **kwargs
-    ) -> float:
-        assert s_t.shape[0] == 2, "Error strategy must have exactly 2 assets"
-        if is_risk_free_asset is True:
-            return float((1 / asset_i) * (reduce(lambda x1,x2: x1-x2, map(lambda x: x**2, s_t))))
-        return  float((2 / s_t) * (reduce(lambda x1,x2: x1-x2, map(lambda x: x**2, s_t))))
+    def get_allocation(self, s_t: Dict[str, float], *args, **kwargs):
+        """Returns the asset allocation for the next iteration
+
+        Args:
+            s_t (Dict[str, float]): The dict of the current assets and prices
+
+        Returns:
+            List[float]: The new quantity to hold for the next iteration
+        """
+        assert len(s_t.keys()) == 2, "There must be only 2 assets"
+        risky_asset_key = list(
+            set(s_t.keys()).difference({self.__risk_free_asset_name})
+        )[0]
+        return [
+            self._scaling_factor
+            * (
+                (1 / price) * (price**2 - (s_t[risky_asset_key] ** 2))
+                if security == self.__risk_free_asset_name
+                else (2 / s_t.get(self.__risk_free_asset_name, 1))
+                * (price - s_t.get(self.__risk_free_asset_name, 1))
+            )
+            for security, price in s_t.items()
+        ]

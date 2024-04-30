@@ -118,7 +118,7 @@ def generate_brownian_path(
     return t, S_t
 
 
-def fbm_covariance_function(s: int, t: int, H: float) -> float:
+def fbm_covariance_function(s: np.float64, t: np.float64, H: float) -> float:
     """Covariance function for the fractional brownian motion
 
     Args:
@@ -161,9 +161,9 @@ def fBM_simul(
             shift = 0
 
         dt = T / N
-
+        phi = np.random.uniform(low=0, high=2 * pi, size=N)
         W_increment = [
-            compute_Wk(k, N, H)
+            compute_Wk(k, N, H, phi)
             for k in tqdm(
                 range(0, N), desc="Computing fBm increments...", leave=False, total=N
             )
@@ -173,8 +173,9 @@ def fBM_simul(
         W = np.array(W[: len(W) - shift])
         W[0] = 0
         return W
+
     elif fbm_simulation_method == "cholesky":
-        time_grid = np.linspace(0.0, T, N)[1:]
+        time_grid = np.linspace(0.0, T, N, dtype=np.float64)[1:]
         fractional_covariance_matrix = np.matrix(
             [
                 [
@@ -186,13 +187,12 @@ def fBM_simul(
         )
         gaussian = np.matrix(np.random.normal(0.0, 1.0, N - 1))
         W = np.linalg.cholesky(fractional_covariance_matrix) * gaussian.T
-        return np.insert(W.A1,0,0)
+        return np.insert(W.A1, 0, 0)
     else:
         raise ValueError("Error provide a valid method for generating the fBm.")
 
 
-
-def compute_Wk(k: int, N: int, H: float) -> float:
+def compute_Wk(k: int, N: int, H: float, phi: npt.NDArray[np.float64]) -> float:
     """Compute fBM increment (B.2)
 
     Args:
@@ -203,7 +203,6 @@ def compute_Wk(k: int, N: int, H: float) -> float:
     Returns:
         float: The increment
     """
-    phi = np.random.uniform(low=0, high=2 * pi, size=N)
     return sum(
         map(
             lambda j: np.sqrt(2 / N)

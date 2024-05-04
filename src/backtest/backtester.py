@@ -82,14 +82,18 @@ class Backtester:
             desc="Running the strategy...",
             leave=False,
         ):  ###################### Compute the new quantity (Equation 2.10) ###############################
-            quantities.append(allocation_function(row.to_dict()))
+            if index != self.__universe_dataframe.index[-1]:
+                quantities.append(allocation_function(row.to_dict()))
+            else:
+                quantities.append([0] * len(row))
             ###################### Volume section (Equation 2.26) ###############################
-            if (
-                index == self.__universe_dataframe.index[0]
-                or index == self.__universe_dataframe.index[-1]
-            ):  # Repurchasing or liquidating
+            if index == self.__universe_dataframe.index[0]:  # Repurchasing
                 volumes.append(
                     np.array(tuple(map(abs, quantities[-1]))) @ row.to_numpy()
+                )
+            elif index == self.__universe_dataframe.index[-1]: # liquidating
+                volumes.append(
+                    np.array(tuple(map(abs, quantities[-2]))) @ row.to_numpy()
                 )
             else:
                 volumes.append(
@@ -132,7 +136,7 @@ class Backtester:
 
             elif index == self.__universe_dataframe.index[-1]:
                 net_revenue = (
-                    np.array(quantities[-1]) @ row.to_numpy()
+                    np.array(quantities[-2]) @ row.to_numpy()
                 ) - transaction_costs[
                     -1
                 ]  # Equation 2.18 : R^\Gamma
@@ -153,7 +157,10 @@ class Backtester:
                 + 1 * transaction_account_qty[-1]
             )  # Discrete
             # Using equation 2.22
-            V_t_psi.append(V_t_phi[-1] - transaction_account_qty[-1])  # Continuous
+            if index != self.__universe_dataframe.index[-1]:
+                V_t_psi.append(V_t_phi[-1] - transaction_account_qty[-1])  # Continuous
+            else:
+                V_t_psi.append(V_t_phi[-1] + (V_t_psi[-1] - V_t_phi[-2])) # Valeur fictive pour faire beau 
 
         return (
             pd.DataFrame(

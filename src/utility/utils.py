@@ -2,6 +2,63 @@ import numpy.typing as npt
 import numpy as np
 from typing import Union
 
+
+def convert_increment_to_indice(
+    time_increment: float, time_vector: npt.NDArray[np.float64]
+) -> int:
+    """Given a time increment time_increment such as 0.1, this function convert it to the nearest index in the whole time vector
+
+    Args:
+        time_increment (float): Time increment
+        time_vector (npt.NDArray[np.float64]): Time vector
+
+    Returns:
+        int: The integer index corresponding to i in t.
+    """
+    return int((np.abs(time_increment - time_vector)).argmin())
+
+
+def compute_empirical_hurst_exponent(
+    s_t: npt.NDArray[np.float64], t: npt.NDArray[np.float64]
+) -> float:
+    """Compute the empirical hurst exponent for a given time series signal s_t and the corresponding time vector t
+
+    Args:
+        s_t (npt.NDArray[np.float64]): The signal or time series
+        t (npt.NDArray[np.float64]): The corresponding time vector
+
+    Returns:
+        float: The estimated hurst exponennt
+    """
+    assert (
+        s_t.shape == t.shape
+    ), "Error provide matching size time vector and signal vector"
+    N = s_t.shape[0]
+    NUMERATOR = np.sum(
+        [
+            (
+                s_t[convert_increment_to_indice((i + 1) / N, t)]
+                - s_t[convert_increment_to_indice((i) / N, t)]
+            )
+            ** 2
+            for i in range(N - 1)
+        ]
+    )
+
+    DENOMINATOR = np.sum(
+        [
+            (
+                s_t[convert_increment_to_indice(2 * (i + 1) / N, t)]
+                - s_t[convert_increment_to_indice((2 * i) / N, t)]
+            )
+            ** 2
+            for i in range((N // 2) - 1)
+        ]
+    )
+
+    return (-1 / (2 * np.log(2))) * np.log(0.5 * NUMERATOR / DENOMINATOR)
+
+
 def transaction_cost_L(volume_t: float, p_1: float, p_2: float) -> float:
     """Equation 2.17 : define the transaction costs
 
@@ -14,6 +71,7 @@ def transaction_cost_L(volume_t: float, p_1: float, p_2: float) -> float:
         float: The charged cost for the volume at t
     """
     return max(volume_t * p_1, p_2) * (volume_t > 0)
+
 
 def generate_t(
     n_steps: int = 100,

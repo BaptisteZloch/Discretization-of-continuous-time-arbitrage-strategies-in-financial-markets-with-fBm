@@ -2,9 +2,6 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 import pandas as pd
 import numpy as np
 import numpy.typing as npt
-
-from tqdm import tqdm
-
 from utility.utils import transaction_cost_L
 
 
@@ -77,10 +74,11 @@ class Backtester:
         V_t_psi = []  # Using equation 2.14/2.22
         V_t_phi = []  # Using equation 2.21
 
-        for index, row in tqdm(
-            self.__universe_dataframe.iterrows(),
-            desc="Running the strategy...",
-            leave=False,
+        for (
+            index,
+            row,
+        ) in (
+            self.__universe_dataframe.iterrows()
         ):  ###################### Compute the new quantity (Equation 2.10) ###############################
             if index != self.__universe_dataframe.index[-1]:
                 quantities.append(allocation_function(row.to_dict()))
@@ -91,7 +89,7 @@ class Backtester:
                 volumes.append(
                     np.array(tuple(map(abs, quantities[-1]))) @ row.to_numpy()
                 )
-            elif index == self.__universe_dataframe.index[-1]: # liquidating
+            elif index == self.__universe_dataframe.index[-1]:  # liquidating
                 volumes.append(
                     np.array(tuple(map(abs, quantities[-2]))) @ row.to_numpy()
                 )
@@ -160,7 +158,9 @@ class Backtester:
             if index != self.__universe_dataframe.index[-1]:
                 V_t_psi.append(V_t_phi[-1] - transaction_account_qty[-1])  # Continuous
             else:
-                V_t_psi.append(V_t_phi[-1] + (V_t_psi[-1] - V_t_phi[-2])) # Valeur fictive pour faire beau 
+                V_t_psi.append(
+                    V_t_phi[-1] + (V_t_psi[-1] - V_t_phi[-2])
+                )  # Valeur fictive pour faire beau
 
         return (
             pd.DataFrame(

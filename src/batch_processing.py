@@ -10,6 +10,7 @@ from simulations.fractional_brownian import generate_n_assets_portfolio
 from strategy.strategy import SalopekStrategy
 
 N_SIMULATION = 10000
+N_WORKERS = 4
 ALPHA = -30
 BETA = 30
 
@@ -21,7 +22,7 @@ SCALING_FACTOR = 100  # \gamma
 
 
 def execute_a_batch(
-    n_simulation: int,
+    n_simulation: int
 ) -> Tuple[List[float], List[float], List[float], List[float]]:
     salopek_strat = SalopekStrategy(
         alpha=ALPHA, beta=BETA, scaling_factor=SCALING_FACTOR
@@ -72,9 +73,9 @@ if __name__ == "__main__":
     running_min_all = []
     V_T_psi_minus_V_T_phi_all = []
 
-    with ProcessPoolExecutor(max_workers=4) as executor:
+    with ProcessPoolExecutor(max_workers=N_WORKERS) as executor:
         processes = [
-            executor.submit(execute_a_batch, N_SIMULATION // 4) for _ in range(4)
+            executor.submit(execute_a_batch, N_SIMULATION // N_WORKERS ) for _ in range(4)
         ]
 
     for task in as_completed(processes):

@@ -1,4 +1,5 @@
 from concurrent.futures import ProcessPoolExecutor, as_completed
+import sys
 from typing import List, Tuple
 import pandas as pd
 import numpy as np
@@ -8,7 +9,7 @@ from backtest.backtester import Backtester
 from simulations.fractional_brownian import generate_n_assets_portfolio
 from strategy.strategy import SalopekStrategy
 
-N_SIMULATION = 8
+N_SIMULATION = 10000
 ALPHA = -30
 BETA = 30
 
@@ -87,11 +88,12 @@ if __name__ == "__main__":
     pd.DataFrame(
         {
             "V_T_psi_all": V_T_psi_all,
-            "V_T_phi_all": V_T_psi_all,
-            "running_min_all": V_T_psi_all,
-            "V_T_psi_minus_V_T_phi_all": V_T_psi_all,
+            "V_T_phi_all": V_T_phi_all,
+            "running_min_all": running_min_all,
+            "V_T_psi_minus_V_T_phi_all": V_T_psi_minus_V_T_phi_all,
         }
     ).to_csv(
         f".\\results\\simulation_result_{round(start_time)}_Salopek_no_fees.csv",
         index=False,
     )
+    sys.exit(0)

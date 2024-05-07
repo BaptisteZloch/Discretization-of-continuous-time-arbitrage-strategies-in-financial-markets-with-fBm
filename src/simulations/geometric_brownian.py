@@ -3,8 +3,6 @@ import numpy as np
 from typing import Tuple, Union
 
 import pandas as pd
-from tqdm import tqdm
-
 from utility.utils import generate_t
 
 
@@ -68,9 +66,7 @@ def generate_n_assets_portfolio(
     portfolio_paths = np.array(
         [
             generate_brownian_path(n_steps=n_steps, T=T, mu=mu, sigma=sigma, s0=s0)[-1]
-            for _ in tqdm(
-                range(n_assets), desc="generate all paths of the portfolio", leave=False
-            )
+            for _ in range(n_assets)
         ]
     ).T
 

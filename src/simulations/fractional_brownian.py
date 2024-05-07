@@ -7,7 +7,6 @@ Created on Sun Mar 31 13:33:44 2024
 
 from typing import Literal, Tuple, Union
 import pandas as pd
-from tqdm import tqdm
 import numpy as np
 import numpy.typing as npt
 from math import pi
@@ -57,9 +56,7 @@ def generate_n_assets_portfolio(
                 s0=s0,
                 brownian_type=brownian_type,
             )[-1]
-            for _ in tqdm(
-                range(n_assets), desc="generate all paths of the portfolio", leave=False
-            )
+            for _ in range(n_assets)
         ]
     ).T
 
@@ -162,12 +159,7 @@ def fBM_simul(
 
         dt = T / N
         phi = np.random.uniform(low=0, high=2 * pi, size=N)
-        W_increment = [
-            compute_Wk(k, N, H, phi)
-            for k in tqdm(
-                range(0, N), desc="Computing fBm increments...", leave=False, total=N
-            )
-        ]
+        W_increment = [compute_Wk(k, N, H, phi) for k in range(0, N)]
 
         W = dt**H * np.cumsum(W_increment)
         W = np.array(W[: len(W) - shift])

@@ -1,6 +1,11 @@
 # Custom
 .vscode
 src/data/
+*.aux
+*.bcf
+*.run.xml
+*.toc
+*.synctex.gz
 # LATEX
 *.out
 *.fls

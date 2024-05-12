@@ -1,5 +1,6 @@
 # Custom
 .vscode
+src/data/
 # LATEX
 *.out
 *.fls

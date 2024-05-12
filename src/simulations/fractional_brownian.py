@@ -5,7 +5,7 @@ Created on Sun Mar 31 13:33:44 2024
 @author: jvilp
 """
 
-from typing import Literal, Tuple, Union
+from typing import Iterable, List, Literal, Tuple, Union
 import pandas as pd
 import numpy as np
 import numpy.typing as npt
@@ -18,7 +18,7 @@ def generate_n_assets_portfolio(
     n_assets: int,
     n_steps: int = 100,
     T: Union[float, int] = 1,
-    H: float = 0.7,
+    H: Union[float, List[float]] = 0.7,
     mu: float = 0.07,
     sigma: float = 0.2,
     s0: Union[float, int] = 100,
@@ -45,21 +45,41 @@ def generate_n_assets_portfolio(
     ----
         Union[pd.DataFrame, npt.NDArray[np.float64]]:  The assets price processes in Pandas DataFrame or Numpy array
     """
-    portfolio_paths = np.array(
-        [
-            generate_brownian_path(
-                n_steps=n_steps,
-                T=T,
-                H=H,
-                mu=mu,
-                sigma=sigma,
-                s0=s0,
-                brownian_type=brownian_type,
-            )[-1]
-            for _ in range(n_assets)
-        ]
-    ).T
-
+    if isinstance(H, List):
+        assert len(H) == n_assets,"Error provide a valid number of parameter in the list"
+    # if isinstance(mu, List):
+    #     assert len(mu) == n_assets,"Error provide a valid number of parameter in the list"
+    # if isinstance(sigma, List):
+    #     assert len(sigma) == n_assets,"Error provide a valid number of parameter in the list"
+        portfolio_paths = np.array(
+            [
+                generate_brownian_path(
+                    n_steps=n_steps,
+                    T=T,
+                    H=H[i],
+                    mu=mu,
+                    sigma=sigma,
+                    s0=s0,
+                    brownian_type=brownian_type,
+                )[-1]
+                for i in range(n_assets)
+            ]
+        ).T
+    else:
+        portfolio_paths = np.array(
+            [
+                generate_brownian_path(
+                    n_steps=n_steps,
+                    T=T,
+                    H=H,
+                    mu=mu,
+                    sigma=sigma,
+                    s0=s0,
+                    brownian_type=brownian_type,
+                )[-1]
+                for _ in range(n_assets)
+            ]
+        ).T
     if add_risk_free_asset:
         portfolio_paths = np.hstack((np.ones(shape=(n_steps, 1)) * s0, portfolio_paths))
 

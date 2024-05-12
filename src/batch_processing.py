@@ -9,8 +9,9 @@ from backtest.backtester import Backtester
 from simulations.fractional_brownian import generate_n_assets_portfolio
 from strategy.strategy import SalopekStrategy
 
-N_SIMULATION = 10000
-N_WORKERS = 4
+N_SIMULATION = 1000
+N_WORKERS = 8
+
 ALPHA = -30
 BETA = 30
 
@@ -22,7 +23,7 @@ SCALING_FACTOR = 100  # \gamma
 
 
 def execute_a_batch(
-    n_simulation: int
+    n_simulation: int,
 ) -> Tuple[List[float], List[float], List[float], List[float]]:
     salopek_strat = SalopekStrategy(
         alpha=ALPHA, beta=BETA, scaling_factor=SCALING_FACTOR
@@ -45,7 +46,7 @@ def execute_a_batch(
                 n_assets=2,
                 n_steps=250,
                 T=1,
-                H=0.7,
+                H=[0.9, 0.99],
                 mu=0.05,
                 sigma=0.1,
                 s0=100,
@@ -75,7 +76,8 @@ if __name__ == "__main__":
 
     with ProcessPoolExecutor(max_workers=N_WORKERS) as executor:
         processes = [
-            executor.submit(execute_a_batch, N_SIMULATION // N_WORKERS ) for _ in range(4)
+            executor.submit(execute_a_batch, N_SIMULATION // N_WORKERS)
+            for _ in range(N_WORKERS)
         ]
 
     for task in as_completed(processes):
@@ -84,7 +86,9 @@ if __name__ == "__main__":
         V_T_phi_all += V_T_phi
         running_min_all += running_min
         V_T_psi_minus_V_T_phi_all += V_T_psi_minus_V_T_phi
-    print(f"--- Execution: {(time.time() - start_time):2f} seconds ---")
+    print(
+        f"--- Execution: {(time.time() - start_time):2f} seconds for {N_SIMULATION} iterations ---"
+    )
 
     pd.DataFrame(
         {
@@ -94,7 +98,7 @@ if __name__ == "__main__":
             "V_T_psi_minus_V_T_phi_all": V_T_psi_minus_V_T_phi_all,
         }
     ).to_csv(
-        f".\\results\\simulation_result_{round(start_time)}_Salopek_no_fees.csv",
+        f".\\results\\salopek\\simulation_result_Salopek_no_fees_h_09_1.csv",
         index=False,
     )
     sys.exit(0)

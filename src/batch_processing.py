@@ -46,7 +46,7 @@ def execute_a_batch(
                 n_assets=2,
                 n_steps=250,
                 T=1,
-                H=[0.6, 0.8],
+                H=[0.9, 0.99],
                 mu=0.05,
                 sigma=0.1,
                 s0=100,
@@ -98,7 +98,7 @@ if __name__ == "__main__":
             "V_T_psi_minus_V_T_phi_all": V_T_psi_minus_V_T_phi_all,
         }
     ).to_csv(
-        f".\\results\\salopek\\simulation_result_{round(start_time)}_Salopek_no_fees_h_06_09.csv",
+        f".\\results\\salopek\\simulation_result_Salopek_no_fees_h_09_1.csv",
         index=False,
     )
     sys.exit(0)

@@ -7,6 +7,7 @@
 *.gz
 ~$*
 
+results
 
 #official python gitignore
 # Byte-compiled / optimized / DLL files

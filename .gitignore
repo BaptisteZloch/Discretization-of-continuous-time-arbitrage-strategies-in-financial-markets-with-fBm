@@ -2,6 +2,7 @@
 .vscode
 src/data/
 *.aux
+*.bbl
 *.bcf
 *.run.xml
 *.toc

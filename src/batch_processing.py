@@ -10,7 +10,7 @@ from simulations.fractional_brownian import generate_n_assets_portfolio
 from strategy.strategy import SalopekStrategy
 
 N_SIMULATION = 1000
-N_WORKERS = 6
+N_WORKERS = 8
 
 # fees (no fees now)
 P1 = 0  # 0.1 proportionality factor p1 (in percent)
@@ -64,8 +64,8 @@ def execute_a_batch(
 
 
 if __name__ == "__main__":
-    for alpha in range(-30, 30,2):
-        for beta in range(alpha + 1, 31,2):
+    for alpha in range(-30, 30, 5):
+        for beta in range(alpha + 1, 31, 5):
             start_time = time.time()
             V_T_psi_all = []
             V_T_phi_all = []
@@ -101,4 +101,4 @@ if __name__ == "__main__":
                 f".\\results\\salopek\\simulation_result_Salopek_no_fees_alpha_beta_{alpha}_{beta}.csv",
                 index=False,
             )
-            sys.exit(0)
+            # sys.exit(0)

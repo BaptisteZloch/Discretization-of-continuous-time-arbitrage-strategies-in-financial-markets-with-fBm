@@ -11,7 +11,8 @@ from strategy.strategy import SalopekStrategy
 
 N_SIMULATION = 1000
 N_WORKERS = 8
-
+ALPHA = -30
+BETA = 30
 # fees (no fees now)
 P1 = 0  # 0.1 proportionality factor p1 (in percent)
 P2 = 0  # 0.5 minimum fee p2 (in monetary units)
@@ -20,10 +21,10 @@ SCALING_FACTOR = 100  # \gamma
 
 
 def execute_a_batch(
-    n_simulation: int, alpha: int, beta: int
+    n_simulation: int, n_assets: int = 2
 ) -> Tuple[List[float], List[float], List[float], List[float]]:
     salopek_strat = SalopekStrategy(
-        alpha=alpha, beta=beta, scaling_factor=SCALING_FACTOR
+        alpha=ALPHA, beta=BETA, scaling_factor=SCALING_FACTOR
     )
     bk_tester = Backtester()
 
@@ -40,10 +41,10 @@ def execute_a_batch(
     ):
         _, V_t_psi, V_t_phi, _ = bk_tester.run_backtest(
             universe_dataframe=generate_n_assets_portfolio(
-                n_assets=2,
+                n_assets=n_assets,
                 n_steps=250,
                 T=1,
-                H=[0.6, 0.6],
+                H=0.6,
                 mu=0.05,
                 sigma=0.1,
                 s0=100,
@@ -64,41 +65,38 @@ def execute_a_batch(
 
 
 if __name__ == "__main__":
-    for alpha in range(-30, 30, 5):
-        for beta in range(alpha + 1, 31, 5):
-            start_time = time.time()
-            V_T_psi_all = []
-            V_T_phi_all = []
-            running_min_all = []
-            V_T_psi_minus_V_T_phi_all = []
+    for n_assets in [3, 5, 10]:
+        start_time = time.time()
+        V_T_psi_all = []
+        V_T_phi_all = []
+        running_min_all = []
+        V_T_psi_minus_V_T_phi_all = []
 
-            with ProcessPoolExecutor(max_workers=N_WORKERS) as executor:
-                processes = [
-                    executor.submit(
-                        execute_a_batch, N_SIMULATION // N_WORKERS, alpha, beta
-                    )
-                    for _ in range(N_WORKERS)
-                ]
+        with ProcessPoolExecutor(max_workers=N_WORKERS) as executor:
+            processes = [
+                executor.submit(execute_a_batch, N_SIMULATION // N_WORKERS, n_assets)
+                for _ in range(N_WORKERS)
+            ]
 
-            for task in as_completed(processes):
-                V_T_psi, V_T_phi, running_min, V_T_psi_minus_V_T_phi = task.result()
-                V_T_psi_all += V_T_psi
-                V_T_phi_all += V_T_phi
-                running_min_all += running_min
-                V_T_psi_minus_V_T_phi_all += V_T_psi_minus_V_T_phi
-            print(
-                f"--- Execution: {(time.time() - start_time):2f} seconds for {N_SIMULATION} iterations ---"
-            )
+        for task in as_completed(processes):
+            V_T_psi, V_T_phi, running_min, V_T_psi_minus_V_T_phi = task.result()
+            V_T_psi_all += V_T_psi
+            V_T_phi_all += V_T_phi
+            running_min_all += running_min
+            V_T_psi_minus_V_T_phi_all += V_T_psi_minus_V_T_phi
+        print(
+            f"--- Execution: {(time.time() - start_time):2f} seconds for {N_SIMULATION} iterations ---"
+        )
 
-            pd.DataFrame(
-                {
-                    "V_T_psi_all": V_T_psi_all,
-                    "V_T_phi_all": V_T_phi_all,
-                    "running_min_all": running_min_all,
-                    "V_T_psi_minus_V_T_phi_all": V_T_psi_minus_V_T_phi_all,
-                }
-            ).to_csv(
-                f".\\results\\salopek\\simulation_result_Salopek_no_fees_alpha_beta_{alpha}_{beta}.csv",
-                index=False,
-            )
-            # sys.exit(0)
+        pd.DataFrame(
+            {
+                "V_T_psi_all": V_T_psi_all,
+                "V_T_phi_all": V_T_phi_all,
+                "running_min_all": running_min_all,
+                "V_T_psi_minus_V_T_phi_all": V_T_psi_minus_V_T_phi_all,
+            }
+        ).to_csv(
+            f".\\results\\salopek\\simulation_result_Salopek_no_fees_{n_assets}.csv",
+            index=False,
+        )
+        # sys.exit(0)
